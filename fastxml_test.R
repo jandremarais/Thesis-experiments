@@ -45,51 +45,71 @@ Ik <- function(k, y) {
   1/sum(1/log(1 + (1:min(k, sum(y)))))
 }
 
-node <- list()
-node$id <- 1:nrow(X)
-
-Id <- node$id # index of observations in node
-delta <- list(sample(c(-1, 1), length(Id), replace = TRUE))
-w <- list(rep(0, D))
-t <- 1
-tw <- 1
-W <- list(1)
-
-C_plus <- 1
-C_minus <- 1
-C_rank <- 1
-
-r_plus <- list()
-r_minus <- list()
-
-while(if(tw > 1) any(delta[[W[[tw]]]] != delta[[W[[tw - 1]]]]) else TRUE) {
-  r_plus[[t]] <- rank_op(
-    k = L,
-    y = apply(t(apply(Y, 1, function(a) Ik(L, a) * a))[delta[[t]] == 1, ], 2, sum)
-  )
-  r_minus[[t]] <- rank_op(
-    k = L,
-    y = apply(t(apply(Y, 1, function(a) Ik(L, a) * a))[delta[[t]] == -1, ], 2, sum)
-  )
+# function taking indices of observation in node and outputs the indices of the positive and negative partitions
+split_node <- function(id, X, Y) {
+  X <- X[id, ]
+  Y <- Y[id, ]
+  delta <- list(sample(c(-1, 1), length(id), replace = TRUE))
+  w <- list(rep(0, D))
+  t <- 1
+  tw <- 1
+  W <- list(1)
   
-  v_plus <- C_plus * log(1 + exp(-c(t(w[[t]]) %*% t(X)))) -
-    C_rank * apply(Y, 1, Ik, k = L) * apply(Y, 1, function(a) sum(a[r_plus[[t]]]/log(1 + (1:L))))
-  v_minus <- C_minus * log(1 + exp(c(t(w[[t]]) %*% t(X)))) -
-    C_rank * apply(Y, 1, Ik, k = L) * apply(Y, 1, function(a) sum(a[r_minus[[t]]]/log(1 + (1:L))))
+  C_plus <- 1
+  C_minus <- 1
+  C_rank <- 1
   
-  delta[[t + 1]] <- delta[[t]]
-  delta[[t + 1]][v_plus != v_minus] <- sign(v_minus - v_plus)[v_plus != v_minus]
+  r_plus <- list()
+  r_minus <- list()
   
-  if(all(delta[[t + 1]] == delta[[t]])) {
-    w[[t + 1]] <- c(LiblineaR(data = X, target = delta[[t]], type = 6, cost = 1, bias = 0)$W)
-    W[[tw + 1]] <- t
-    tw <- tw + 1
-  } else {
-    w[[t + 1]] <- w[[t]]
+  while(if(tw > 1) any(delta[[W[[tw]]]] != delta[[W[[tw - 1]]]]) else TRUE) {
+    r_plus[[t]] <- rank_op(
+      k = L,
+      y = apply(t(apply(Y, 1, function(a) Ik(L, a) * a))[delta[[t]] == 1, ], 2, sum)
+    )
+    r_minus[[t]] <- rank_op(
+      k = L,
+      y = apply(t(apply(Y, 1, function(a) Ik(L, a) * a))[delta[[t]] == -1, ], 2, sum)
+    )
+    
+    v_plus <- C_plus * log(1 + exp(-c(t(w[[t]]) %*% t(X)))) -
+      C_rank * apply(Y, 1, Ik, k = L) * apply(Y, 1, function(a) sum(a[r_plus[[t]]]/log(1 + (1:L))))
+    v_minus <- C_minus * log(1 + exp(c(t(w[[t]]) %*% t(X)))) -
+      C_rank * apply(Y, 1, Ik, k = L) * apply(Y, 1, function(a) sum(a[r_minus[[t]]]/log(1 + (1:L))))
+    
+    delta[[t + 1]] <- delta[[t]]
+    delta[[t + 1]][v_plus != v_minus] <- sign(v_minus - v_plus)[v_plus != v_minus]
+    
+    if(all(delta[[t + 1]] == delta[[t]])) {
+      w[[t + 1]] <- c(LiblineaR(data = X, target = delta[[t]], type = 6, cost = 1, bias = 0)$W)
+      W[[tw + 1]] <- t
+      tw <- tw + 1
+    } else {
+      w[[t + 1]] <- w[[t]]
+    }
+    
+    t <- t + 1
   }
   
-  t <- t + 1
+  list(negative = id[delta[[t]] == -1], 
+       positive = id[delta[[t]] == 1],
+       separator = w[[t]])
 }
 
 
+library(data.tree)
+fxml_tree <- Node$new("initial", id = 1:nrow(X))
+
+done <- FALSE
+while(!done) {
+  fxml_tree$Do(function(node) {
+    if(length(node$id) >= 100) {
+      temp <- split_node(node$id, X = X, Y = Y)
+      node$w <- temp$separator
+      node$AddChild("neg", id = temp$negative)
+      node$AddChild("pos", id = temp$positive)
+    }
+  }, filterFun = isLeaf)
   
+  done <- all(sapply(fxml_tree$Get("id", filterFun = isLeaf), length) < 100)
+}
