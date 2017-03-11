@@ -114,13 +114,13 @@ leaf_nodes <- fxml_tree$Do(function(node) node, filterFun = isLeaf)
 Y_pred <- matrix(NA, nrow = nrow(Y), ncol = ncol(Y))
 
 for(i in 1:length(leaf_nodes)) {
-  Y_pred[leaf_nodes[[i]]$id, ] <- leaf_nodes[[i]]$P
+  Y_pred[leaf_nodes[[i]]$id, ] <- rep(leaf_nodes[[i]]$P, each = length(leaf_nodes[[i]]$id))
 }
+
 
 mean(sapply(1:nrow(Y), function(a) mean(Y[a, rank_op(Y_pred[a, ], k = 20)])))
 
-mean(sapply(1:nrow(Y), function(a) nDCG(rank_op(Y_pred[a, ], k = 20), Y[a, ], k = 20)))
+mean(sapply(1:nrow(Y), function(a) nDCG(rank_op(Y_pred[a, ], k = 5), Y[a, ], k = 5)))
 
-Y_pred[2, ]
-rank_op(Y_pred[2, ], k = 20)
+
 
