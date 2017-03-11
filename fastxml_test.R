@@ -6,15 +6,6 @@ main <- py_run_file("load_tfrecords.py")
 X <- main$X
 Y <- main$Y
 
-nDCG <- function(r, y, k) {
-  # function to calculate the normalized discountedcumulative gain @ k
-  # given ground truth y and ranking indices r
-  if(k != length(r)) stop("k of ranking does not match k")
-  num_rel <- sum(y)
-  Ik <- 1/sum(rep(1, min(num_rel, k))/log(1+(1:min(num_rel, k))))
-  Ik * sum(y[r]/log(1+(1:k)))
-}
-
 rank_op <- function(y, k) {
   # function mimicing the rank operator
   # takes vector y as input and outputs the indices of the k largest elements of y ranked in descending order
@@ -24,14 +15,6 @@ rank_op <- function(y, k) {
   #rank(-y, ties.method = "random")[1:k]
   order(y, sample(1:length(y)), decreasing = TRUE)[1:k]
 }
-
-y_pred[rank_op(y_pred, k = 3)]
-rank_op(y_pred, k = 3)
-
-y_gt <- c(1,1,0,0,0,1,0)
-y_pred <- c(0.1,0.2,0.85,0.85,0.9,0.5,0.99)
-
-nDCG(r = rank_op(y_pred, k = 3), y = y_gt, k = 4)
 
 # equation 5
 ## objectve function
@@ -43,6 +26,14 @@ L <- ncol(Y)
 
 Ik <- function(k, y) {
   1/sum(1/log(1 + (1:min(k, sum(y)))))
+}
+
+nDCG <- function(r, y, k) {
+  # function to calculate the normalized discountedcumulative gain @ k
+  # given ground truth y and ranking indices r
+  if(k != length(r)) stop("k of ranking does not match k")
+  num_rel <- sum(y)
+  Ik(k, y) * sum(y[r]/log(1+(1:k)))
 }
 
 # function taking indices of observation in node and outputs the indices of the positive and negative partitions
@@ -99,11 +90,11 @@ split_node <- function(id, X, Y) {
 
 library(data.tree)
 fxml_tree <- Node$new("initial", id = 1:nrow(X))
-
+max_leaf <- 100
 done <- FALSE
 while(!done) {
   fxml_tree$Do(function(node) {
-    if(length(node$id) >= 100) {
+    if(length(node$id) >= max_leaf) {
       temp <- split_node(node$id, X = X, Y = Y)
       node$w <- temp$separator
       node$AddChild("neg", id = temp$negative)
@@ -111,5 +102,25 @@ while(!done) {
     }
   }, filterFun = isLeaf)
   
-  done <- all(sapply(fxml_tree$Get("id", filterFun = isLeaf), length) < 100)
+  done <- all(sapply(fxml_tree$Get("id", filterFun = isLeaf), length) < max_leaf)
 }
+
+fxml_tree$Do(function(node) {
+  node$P <- apply(Y[node$id, ], 2, sum)/length(node$id)
+}, filterFun = isLeaf)
+
+leaf_nodes <- fxml_tree$Do(function(node) node, filterFun = isLeaf)
+
+Y_pred <- matrix(NA, nrow = nrow(Y), ncol = ncol(Y))
+
+for(i in 1:length(leaf_nodes)) {
+  Y_pred[leaf_nodes[[i]]$id, ] <- leaf_nodes[[i]]$P
+}
+
+mean(sapply(1:nrow(Y), function(a) mean(Y[a, rank_op(Y_pred[a, ], k = 20)])))
+
+mean(sapply(1:nrow(Y), function(a) nDCG(rank_op(Y_pred[a, ], k = 20), Y[a, ], k = 20)))
+
+Y_pred[2, ]
+rank_op(Y_pred[2, ], k = 20)
+
