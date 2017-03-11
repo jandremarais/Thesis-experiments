@@ -1,7 +1,7 @@
 import numpy as np
 import tensorflow as tf
 
-record = "traina0.tfrecord"
+record = "/home/jan/Downloads/traina0.tfrecord"
 
 vid_ids = []
 labels = []
