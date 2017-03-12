@@ -126,7 +126,7 @@ temp <- sample(1:nrow(X), 1000)
 temp_tree <- grow_tree(X = X[temp, ], Y = Y[temp, ], max_leaf = 100)
 temp_tree$predictions[1:5, 1:5]
 
-predict_tree <- function(X, Y, tree) {
+tree_predict <- function(X, Y, tree) {
   pred_tree <- Clone(tree)
   pred_tree$Do(function(node) node$RemoveAttribute("id"))
   pred_tree$root$Do(function(node) node$id <- 1:nrow(X), filterFun = isRoot)
@@ -150,27 +150,33 @@ predict_tree <- function(X, Y, tree) {
   list(predictions = Y_pred)
 }
 
-predict_tree(X[temp, ], Y[temp, ], temp_tree$tree)$predictions[1:5, 1:5]
+tree_predict(X[temp, ], Y[temp, ], temp_tree$tree)$predictions[1:5, 1:5]
 temp_tree$predictions[1:5, 1:5]
+
+library(parallel)
+nCores <- detectCores()
 
 grow_forest <- function(ntrees, X, Y, max_leaf) {
   require(parallel)
   nCores <- detectCores()
-
-  mclapply(1:ntrees, function(a) {
+  trees <- mclapply(1:ntrees, function(a) {
     grow_tree(X, Y, max_leaf = max_leaf)
   }, mc.cores = nCores)
 }
+
+temp_forest <- grow_forest(ntrees = 4, X[temp, ], Y[temp, ], max_leaf = 100)
 
 forest_predict <- function(forest, X, Y) {
   require(parallel)
   nCores <- detectCores()
   tree_preds <- mclapply(forest, function(a) {
-   tree_predict(X, Y, tree = a$tree)$predictions
+    tree_predict(X, Y, tree = a$tree)$predictions
   }, mc.cores = nCores)
-  do.call("sum", tree_preds)/length(forest)
+  Reduce("+", tree_preds)/length(tree_preds)
 }
-s
+
+temp_pred <- forest_predict(temp_forest, X[temp, ], Y[temp, ])
+temp_pred[1:5, 1:5]
 
 mean(sapply(1:nrow(Y), function(a) mean(Y[a, rank_op(Y_pred[a, ], k = 20)])))
 
