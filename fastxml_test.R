@@ -154,6 +154,16 @@ predict_new(X[temp, ], Y[temp, ], temp_tree$tree)$predictions[1:5, 1:5]
 temp_tree$predictions[1:5, 1:5]
 
 
+forest_predict <- function(forest, X, Y) {
+require(parallel)
+nCores <- detectCores()
+tree_preds <- mclapply(forest, function(a) {
+tree_predict(X, Y, tree = a$tree)$predictions
+}, mc.cores = nCores)
+do.call("sum", tree_preds)/length(forest)
+}
+
+
 mean(sapply(1:nrow(Y), function(a) mean(Y[a, rank_op(Y_pred[a, ], k = 20)])))
 
 mean(sapply(1:nrow(Y), function(a) nDCG(rank_op(Y_pred[a, ], k = 20), Y[a, ], k = 20)))
