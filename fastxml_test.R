@@ -147,7 +147,7 @@ predict_tree <- function(X, Y, tree) {
   for(i in 1:length(leaf_nodes)) {
     Y_pred[leaf_nodes[[i]]$id, ] <- rep(leaf_nodes[[i]]$P, each = length(leaf_nodes[[i]]$id))
   }
-  print(list(predictions = Y_pred))
+  list(predictions = Y_pred)
 }
 
 predict_tree(X[temp, ], Y[temp, ], temp_tree$tree)$predictions[1:5, 1:5]
@@ -159,7 +159,7 @@ grow_forest <- function(ntrees, X, Y, max_leaf) {
 
   mclapply(1:ntrees, function(a) {
     grow_tree(X, Y, max_leaf = max_leaf)
-  }
+  }, mc.cores = nCores)
 }
 
 forest_predict <- function(forest, X, Y) {
