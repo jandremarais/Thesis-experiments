@@ -126,7 +126,7 @@ temp <- sample(1:nrow(X), 1000)
 temp_tree <- grow_tree(X = X[temp, ], Y = Y[temp, ], max_leaf = 100)
 temp_tree$predictions[1:5, 1:5]
 
-predict_new <- function(X, Y, tree) {
+predict_tree <- function(X, Y, tree) {
   pred_tree <- Clone(tree)
   pred_tree$Do(function(node) node$RemoveAttribute("id"))
   pred_tree$root$Do(function(node) node$id <- 1:nrow(X), filterFun = isRoot)
@@ -150,7 +150,7 @@ predict_new <- function(X, Y, tree) {
   print(list(predictions = Y_pred))
 }
 
-predict_new(X[temp, ], Y[temp, ], temp_tree$tree)$predictions[1:5, 1:5]
+predict_tree(X[temp, ], Y[temp, ], temp_tree$tree)$predictions[1:5, 1:5]
 temp_tree$predictions[1:5, 1:5]
 
 
