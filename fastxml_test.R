@@ -153,6 +153,14 @@ predict_tree <- function(X, Y, tree) {
 predict_tree(X[temp, ], Y[temp, ], temp_tree$tree)$predictions[1:5, 1:5]
 temp_tree$predictions[1:5, 1:5]
 
+grow_forest <- function(ntrees, X, Y, max_leaf) {
+  require(parallel)
+  nCores <- detectCores()
+
+  mclapply(1:ntrees, function(a) {
+    grow_tree(X, Y, max_leaf = max_leaf)
+  }
+}
 
 forest_predict <- function(forest, X, Y) {
   require(parallel)
@@ -162,7 +170,7 @@ forest_predict <- function(forest, X, Y) {
   }, mc.cores = nCores)
   do.call("sum", tree_preds)/length(forest)
 }
-
+s
 
 mean(sapply(1:nrow(Y), function(a) mean(Y[a, rank_op(Y_pred[a, ], k = 20)])))
 
