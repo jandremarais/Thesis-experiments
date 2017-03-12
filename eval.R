@@ -56,7 +56,3 @@ MCAP(Y_test, Y_test_hat, 1:ncol(Y))
 
 mean(sapply(1:20, function(a) CalculateAveragePrecision(Y_test_hat[, a], Y_test[, a])))
 
-temp_sys <- system("gsutil ls gs://us.data.yt8m.org/1/video_level/test")
-
-26*2 * (26 + 10) *2
-

@@ -5,13 +5,13 @@ main <- py_run_file("load_tfrecords.py")
 X <- main$X
 Y <- main$Y
 
-train_ind <- sample(1:nrow(X), 7000)
+train_ind <- sample(1:nrow(X), 15000)
 X_train <- X[train_ind, ]
 Y_train <- Y[train_ind, ]
 X_test <- X[-train_ind, ]
 Y_test <- Y[-train_ind, ]
 
-train_forest <- grow_forest(ntrees = 4, X_train, Y_train, max_leaf = 100)
+train_forest <- grow_forest(ntrees = 6, X_train, Y_train, max_leaf = 100)
 
 Y_test_hat <- forest_predict(train_forest, X = X_test, Y = Y_test)
 

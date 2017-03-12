@@ -122,9 +122,9 @@ grow_tree <- function(X, Y, max_leaf = 100) {
   list(tree = fxml_tree, predictions = Y_pred)
 }
 
-temp <- sample(1:nrow(X), 1000)
-temp_tree <- grow_tree(X = X[temp, ], Y = Y[temp, ], max_leaf = 100)
-temp_tree$predictions[1:5, 1:5]
+#temp <- sample(1:nrow(X), 1000)
+#temp_tree <- grow_tree(X = X[temp, ], Y = Y[temp, ], max_leaf = 100)
+#temp_tree$predictions[1:5, 1:5]
 
 tree_predict <- function(X, Y, tree) {
   pred_tree <- Clone(tree)
@@ -150,8 +150,8 @@ tree_predict <- function(X, Y, tree) {
   list(predictions = Y_pred)
 }
 
-tree_predict(X[temp, ], Y[temp, ], temp_tree$tree)$predictions[1:5, 1:5]
-temp_tree$predictions[1:5, 1:5]
+#tree_predict(X[temp, ], Y[temp, ], temp_tree$tree)$predictions[1:5, 1:5]
+#temp_tree$predictions[1:5, 1:5]
 
 library(parallel)
 nCores <- detectCores()
@@ -164,7 +164,7 @@ grow_forest <- function(ntrees, X, Y, max_leaf) {
   }, mc.cores = nCores)
 }
 
-temp_forest <- grow_forest(ntrees = 4, X[temp, ], Y[temp, ], max_leaf = 100)
+#temp_forest <- grow_forest(ntrees = 4, X[temp, ], Y[temp, ], max_leaf = 100)
 
 forest_predict <- function(forest, X, Y) {
   require(parallel)
@@ -175,10 +175,10 @@ forest_predict <- function(forest, X, Y) {
   Reduce("+", tree_preds)/length(tree_preds)
 }
 
-temp_pred <- forest_predict(temp_forest, X[temp, ], Y[temp, ])
-temp_pred[1:5, 1:5]
+#temp_pred <- forest_predict(temp_forest, X[temp, ], Y[temp, ])
+#temp_pred[1:5, 1:5]
 
-mean(sapply(1:nrow(Y), function(a) mean(Y[a, rank_op(Y_pred[a, ], k = 20)])))
+#mean(sapply(1:nrow(Y), function(a) mean(Y[a, rank_op(Y_pred[a, ], k = 20)])))
 
-mean(sapply(1:nrow(Y), function(a) nDCG(rank_op(Y_pred[a, ], k = 20), Y[a, ], k = 20)))
+#mean(sapply(1:nrow(Y), function(a) nDCG(rank_op(Y_pred[a, ], k = 20), Y[a, ], k = 20)))
 
