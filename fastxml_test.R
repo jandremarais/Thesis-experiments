@@ -89,38 +89,79 @@ split_node <- function(id, X, Y) {
 
 
 library(data.tree)
-fxml_tree <- Node$new("initial", id = 1:nrow(X))
-max_leaf <- 100
-done <- FALSE
-while(!done) {
+
+grow_tree <- function(X, Y, max_leaf = 100) {
+  fxml_tree <- Node$new("initial", id = 1:nrow(X))
+  done <- FALSE
+  while(!done) {
+    fxml_tree$Do(function(node) {
+      if(length(node$id) >= max_leaf) {
+        temp <- split_node(node$id, X = X, Y = Y)
+        node$w <- temp$separator
+        node$AddChild("neg", id = temp$negative)
+        node$AddChild("pos", id = temp$positive)
+      }
+    }, filterFun = isLeaf)
+    
+    done <- all(sapply(fxml_tree$Get("id", filterFun = isLeaf), length) < max_leaf)
+  }
+  
   fxml_tree$Do(function(node) {
-    if(length(node$id) >= max_leaf) {
-      temp <- split_node(node$id, X = X, Y = Y)
-      node$w <- temp$separator
-      node$AddChild("neg", id = temp$negative)
-      node$AddChild("pos", id = temp$positive)
-    }
+    node$P <- apply(Y[node$id, ], 2, sum)/length(node$id)
   }, filterFun = isLeaf)
   
-  done <- all(sapply(fxml_tree$Get("id", filterFun = isLeaf), length) < max_leaf)
+  leaf_nodes <- fxml_tree$Do(function(node) node, filterFun = isLeaf)
+  
+  Y_pred <- matrix(NA, nrow = nrow(Y), ncol = ncol(Y))
+  
+  # can probably make this faster
+  for(i in 1:length(leaf_nodes)) {
+    Y_pred[leaf_nodes[[i]]$id, ] <- rep(leaf_nodes[[i]]$P, each = length(leaf_nodes[[i]]$id))
+  }
+  
+  list(tree = fxml_tree, predictions = Y_pred)
 }
 
-fxml_tree$Do(function(node) {
-  node$P <- apply(Y[node$id, ], 2, sum)/length(node$id)
-}, filterFun = isLeaf)
+temp <- sample(1:nrow(X), 1000)
+temp_tree <- grow_tree(X = X[temp, ], Y = Y[temp, ], max_leaf = 100)
+temp_tree$predictions[1:5, 1:5]
 
-leaf_nodes <- fxml_tree$Do(function(node) node, filterFun = isLeaf)
-
-Y_pred <- matrix(NA, nrow = nrow(Y), ncol = ncol(Y))
-
-for(i in 1:length(leaf_nodes)) {
-  Y_pred[leaf_nodes[[i]]$id, ] <- rep(leaf_nodes[[i]]$P, each = length(leaf_nodes[[i]]$id))
+predict_new <- function(X, Y, tree) {
+  pred_tree <- Clone(tree)
+  pred_tree$Do(function(node) node$RemoveAttribute("id"))
+  pred_tree$root$Do(function(node) node$id <- 1:nrow(X), filterFun = isRoot)
+  
+  pred_tree$Do(function(node) {
+    if(!is.null(node$w)) {
+      part_score <- t(node$w) %*% t(X[node$id,])
+      node$pos$id <- node$id[part_score > 0]
+      node$neg$id <- node$id[part_score <= 0]
+    }
+  })
+  
+  leaf_nodes <- pred_tree$Do(function(node) node, filterFun = isLeaf)
+  
+  Y_pred <- matrix(NA, nrow = nrow(Y), ncol = ncol(Y))
+  
+  # can probably make this faster
+  for(i in 1:length(leaf_nodes)) {
+    Y_pred[leaf_nodes[[i]]$id, ] <- rep(leaf_nodes[[i]]$P, each = length(leaf_nodes[[i]]$id))
+  }
+  print(list(predictions = Y_pred))
 }
+
+predict_new(X[temp, ], Y[temp, ], temp_tree$tree)$predictions[1:5, 1:5]
+temp_tree$predictions[1:5, 1:5]
 
 
 mean(sapply(1:nrow(Y), function(a) mean(Y[a, rank_op(Y_pred[a, ], k = 20)])))
 
-mean(sapply(1:nrow(Y), function(a) nDCG(rank_op(Y_pred[a, ], k = 5), Y[a, ], k = 5)))
+mean(sapply(1:nrow(Y), function(a) nDCG(rank_op(Y_pred[a, ], k = 20), Y[a, ], k = 20)))
 
+library(utiml)
+
+
+
+multilabel_evaluate()
 
 
