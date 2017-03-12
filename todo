@@ -1,0 +1,10 @@
+# TOTRY
+
++ split on subset of features
++ split on single feature
++ determine loss for split on subset of data
+
+# TODO
+
++ make predictions kaggle-ready
++ predict test data
