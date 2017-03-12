@@ -1,6 +1,6 @@
+library(LiblineaR)
 library(tensorflow)
 library(reticulate)
-library(LiblineaR)
 
 main <- py_run_file("load_tfrecords.py")
 X <- main$X
