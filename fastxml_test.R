@@ -155,12 +155,12 @@ temp_tree$predictions[1:5, 1:5]
 
 
 forest_predict <- function(forest, X, Y) {
-require(parallel)
-nCores <- detectCores()
-tree_preds <- mclapply(forest, function(a) {
-tree_predict(X, Y, tree = a$tree)$predictions
-}, mc.cores = nCores)
-do.call("sum", tree_preds)/length(forest)
+  require(parallel)
+  nCores <- detectCores()
+  tree_preds <- mclapply(forest, function(a) {
+   tree_predict(X, Y, tree = a$tree)$predictions
+  }, mc.cores = nCores)
+  do.call("sum", tree_preds)/length(forest)
 }
 
 
