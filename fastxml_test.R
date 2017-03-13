@@ -128,7 +128,7 @@ grow_tree <- function(X, Y, max_leaf = 100) {
 #temp_tree <- grow_tree(X = X[temp, ], Y = Y[temp, ], max_leaf = 100)
 #temp_tree$predictions[1:5, 1:5]
 
-tree_predict <- function(X, Y, tree) {
+tree_predict <- function(X, tree) {
   pred_tree <- Clone(tree)
   pred_tree$Do(function(node) node$RemoveAttribute("id"))
   pred_tree$root$Do(function(node) node$id <- 1:nrow(X), filterFun = isRoot)
@@ -143,7 +143,7 @@ tree_predict <- function(X, Y, tree) {
   
   leaf_nodes <- pred_tree$Do(function(node) node, filterFun = isLeaf)
   
-  Y_pred <- matrix(NA, nrow = nrow(Y), ncol = ncol(Y))
+  Y_pred <- matrix(NA, nrow = nrow(X), ncol = ncol(Y))
   
   # can probably make this faster
   for(i in 1:length(leaf_nodes)) {
