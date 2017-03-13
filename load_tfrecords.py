@@ -3,6 +3,7 @@ import tensorflow as tf
 import string
 
 filenames = map(str.strip, open("video_train_files.txt").readlines())
+#filenames = ["gs://youtube8m-ml/1/video_level/train/train-{}.tfrecord".format(i) for i in range(5)]
 
 vid_ids = []
 labels = []
@@ -16,7 +17,7 @@ for filename in filenames[1:50]:
         labels.append(tf_example.features.feature['labels'].int64_list.value)
         mean_rgb.append(tf_example.features.feature['mean_rgb'].float_list.value)
         mean_audio.append(tf_example.features.feature['mean_audio'].float_list.value)
-    
+
 from numpy import array
 mean_audio = array(mean_audio)
 mean_rgb = array(mean_rgb)

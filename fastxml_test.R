@@ -2,9 +2,9 @@ library(LiblineaR)
 library(tensorflow)
 library(reticulate)
 
-main <- py_run_file("load_tfrecords.py")
-X <- main$X
-Y <- main$Y
+#main <- py_run_file("load_tfrecords.py")
+#X <- main$X
+#Y <- main$Y
 
 rank_op <- function(y, k) {
   # function mimicing the rank operator
@@ -19,8 +19,8 @@ rank_op <- function(y, k) {
 # equation 5
 ## objectve function
 
-D <- ncol(X)
-L <- ncol(Y)
+#D <- ncol(X)
+#L <- ncol(Y)
 
 # algo 2, split-node
 
@@ -154,7 +154,7 @@ tree_predict <- function(X, Y, tree) {
 #temp_tree$predictions[1:5, 1:5]
 
 library(parallel)
-nCores <- detectCores()
+#nCores <- detectCores()
 
 grow_forest <- function(ntrees, X, Y, max_leaf) {
   require(parallel)
