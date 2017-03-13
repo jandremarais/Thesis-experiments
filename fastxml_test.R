@@ -40,6 +40,8 @@ nDCG <- function(r, y, k) {
 split_node <- function(id, X, Y) {
   X <- X[id, ]
   Y <- Y[id, ]
+  D <- ncol(X)
+  L <- ncol(Y)
   delta <- list(sample(c(-1, 1), length(id), replace = TRUE))
   w <- list(rep(0, D))
   t <- 1
