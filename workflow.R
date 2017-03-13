@@ -1,6 +1,14 @@
 library(tensorflow)
 library(reticulate)
 
+system("gsutil ls gs://us.data.yt8m.org/1/video_level/test > video_test_files.txt")
+system("gsutil ls gs://us.data.yt8m.org/1/video_level/train > video_train_files.txt")
+system("gsutil ls gs://us.data.yt8m.org/1/video_level/validate > video_validate_files.txt")
+
+video_test_files <- read.table("video_test_files.txt", stringsAsFactors = FALSE)
+video_train_files <- read.table("video_train_files.txt", stringsAsFactors = FALSE)
+video_validate_files <- read.table("video_validate_files.txt", stringsAsFactors = FALSE)
+
 main <- py_run_file("load_tfrecords.py")
 X <- main$X
 Y <- main$Y
