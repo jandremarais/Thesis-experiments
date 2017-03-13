@@ -2,15 +2,14 @@ import numpy as np
 import tensorflow as tf
 import string
 
-rng = list(string.ascii_lowercase)
-filenames = ["gs://youtube8m-ml/1/video_level/train/trainb{}.tfrecord".format(i) for i in rng]
+filenames = map(str.strip, open("video_train_files.txt").readlines())
 
 vid_ids = []
 labels = []
 mean_rgb = []
 mean_audio = []
 
-for filename in filenames:
+for filename in filenames[1:50]:
     for example in tf.python_io.tf_record_iterator(filename):
         tf_example = tf.train.Example.FromString(example)
         vid_ids.append(tf_example.features.feature['video_id'].bytes_list.value[0].decode(encoding='UTF-8'))
