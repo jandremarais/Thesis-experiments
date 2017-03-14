@@ -2,10 +2,7 @@ library(tensorflow)
 library(reticulate)
 library(LiblineaR)
 
-#system("gsutil ls gs://us.data.yt8m.org/1/video_level/test > video_test_files.txt")
-#system("gsutil ls gs://us.data.yt8m.org/1/video_level/train > video_train_files.txt")
-#system("gsutil ls gs://us.data.yt8m.org/1/video_level/validate > video_validate_files.txt")
-
+# create text files of list of filenames
 system("gsutil ls gs://youtube8m-ml/1/video_level/test > video_test_files.txt")
 system("gsutil ls gs://youtube8m-ml/1/video_level/train > video_train_files.txt")
 system("gsutil ls gs://youtube8m-ml/1/video_level/validate > video_validate_files.txt")
@@ -14,30 +11,41 @@ system("gsutil ls gs://youtube8m-ml/1/video_level/validate > video_validate_file
 #video_train_files <- read.table("video_train_files.txt", stringsAsFactors = FALSE)
 #video_validate_files <- read.table("video_validate_files.txt", stringsAsFactors = FALSE)
 
+# training step
 train_files <- read.table("video_train_files.txt", stringsAsFactors = FALSE)
 write.table(train_files[2:5, ], "train_to_imp.txt", row.names = FALSE, col.names = FALSE, quote = FALSE)
 
 main <- py_run_file("load_tfrecords.py")
-X <- main$X
-Y <- main$Y
+X_train <- main$X
+Y_train <- main$Y
 
-train_ind <- sample(1:nrow(X), 2000)
-X_train <- X[train_ind, ]
-Y_train <- Y[train_ind, ]
-X_test <- X[-train_ind, ]
-Y_test <- Y[-train_ind, ]
+train_forest <- grow_forest(ntrees = 1, X_train, Y_train, max_leaf = 10)
+saveRDS(train_forest, "train_forest.rds")
+train_forest <- readRDS("train_forest.rds")
 
-train_forest <- grow_forest(ntrees = 1, X, Y, max_leaf = 10)
+Y_hat_train_ <- forest_predict(train_forest, X = X_train)
 
-Y_train_hat <- forest_predict(train_forest, X = X)
-
-write.table(Y_train_hat, "yhattrain.csv", sep = ",", row.names = FALSE, col.names = FALSE)
-write.table(Y, "ytrain.csv", sep = ",", row.names = FALSE, col.names = FALSE)
+write.table(Y_hat_train, "yhat.csv", sep = ",", row.names = FALSE, col.names = FALSE)
+write.table(Y_train, "y.csv", sep = ",", row.names = FALSE, col.names = FALSE)
 
 py_run_file("gap.py")$value
 
-saveRDS(train_forest, "train_forest.rds")
-train_forest <- readRDS("train_forest.rds")
+# validation step
+validate_files <- read.table("video_validate_files.txt", stringsAsFactors = FALSE)
+write.table(validate_files[2:5, ], "train_to_imp.txt", row.names = FALSE, col.names = FALSE, quote = FALSE)
+
+main <- py_run_file("load_tfrecords.py")
+X_validate <- main$X
+Y_validate <- main$Y
+
+Y_hat_validate <- forest_predict(train_forest, X = X_validate)
+
+write.table(Y_hat_validate, "yhat.csv", sep = ",", row.names = FALSE, col.names = FALSE)
+write.table(Y_validate, "y.csv", sep = ",", row.names = FALSE, col.names = FALSE)
+
+py_run_file("gap.py")$value
+
+# testing step
 
 kaggle_sub <- NULL
 files <- read.table("video_test_files.txt", stringsAsFactors = FALSE)
