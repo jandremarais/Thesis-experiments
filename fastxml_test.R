@@ -38,10 +38,19 @@ nDCG <- function(r, y, k) {
 
 # function taking indices of observation in node and outputs the indices of the positive and negative partitions
 split_node <- function(id, X, Y) {
-  X <- X[id, ]
-  Y <- Y[id, ]
   D <- ncol(X)
   L <- ncol(Y)
+  
+  X <- X[id, ]
+  Y <- Y[id, ]
+  
+  # if(length(id) > 1) {
+  #   
+  # } else{
+  #   X <- matrix(X[id, ], ncol = D)
+  #   Y <- matrix(Y[id, ], ncol = L)
+  # }
+
   delta <- list(sample(c(-1, 1), length(id), replace = TRUE))
   w <- list(rep(0, D))
   t <- 1
@@ -58,11 +67,11 @@ split_node <- function(id, X, Y) {
   while(if(tw > 1) any(delta[[W[[tw]]]] != delta[[W[[tw - 1]]]]) else TRUE) {
     r_plus[[t]] <- rank_op(
       k = L,
-      y = apply(t(apply(Y, 1, function(a) Ik(L, a) * a))[delta[[t]] == 1, ], 2, sum)
+      y = apply(t(apply(Y, 1, function(a) Ik(L, a) * a))[delta[[t]] == 1, , drop = FALSE], 2, sum)
     )
     r_minus[[t]] <- rank_op(
       k = L,
-      y = apply(t(apply(Y, 1, function(a) Ik(L, a) * a))[delta[[t]] == -1, ], 2, sum)
+      y = apply(t(apply(Y, 1, function(a) Ik(L, a) * a))[delta[[t]] == -1, , drop = FALSE], 2, sum)
     )
     
     v_plus <- C_plus * log(1 + exp(-c(t(w[[t]]) %*% t(X)))) -
@@ -89,6 +98,9 @@ split_node <- function(id, X, Y) {
        separator = w[[t]])
 }
 
+#apply(t(apply(Y[1:10, ], 1, function(a) Ik(ncol(Y), a) * a))[sample(c(TRUE,FALSE), 10, replace = TRUE), ], 2, sum)
+
+apply(matrix(1:5, byrow = TRUE),1,sum)
 
 library(data.tree)
 
@@ -109,7 +121,7 @@ grow_tree <- function(X, Y, max_leaf = 100) {
   }
   
   fxml_tree$Do(function(node) {
-    node$P <- apply(Y[node$id, ], 2, sum)/length(node$id)
+    node$P <- apply(Y[node$id, , drop = FALSE], 2, sum)/length(node$id)
   }, filterFun = isLeaf)
   
   leaf_nodes <- fxml_tree$Do(function(node) node, filterFun = isLeaf)
@@ -139,7 +151,7 @@ tree_predict <- function(X, tree) {
       #return(print(dim(t(node$w))))
       #return(print(node$id))
       #return(print(dim(t(matrix(X[node$id,], nrow = length(node$id))))))
-      part_score <- t(node$w) %*% t(matrix(X[node$id,], nrow = length(node$id)))
+      part_score <- t(node$w) %*% t(X[node$id, , drop = FALSE])
       node$pos$id <- node$id[part_score > 0]
       node$neg$id <- node$id[part_score <= 0]
     }
