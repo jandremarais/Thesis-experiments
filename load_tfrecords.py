@@ -3,9 +3,9 @@ import tensorflow as tf
 import string
 import sys
 
-#filenames = map(str.strip, open("video_train_files.txt").readlines())
+filenames = map(str.strip, open("train_to_imp.txt").readlines())
 #filenames = ["gs://youtube8m-ml/1/video_level/train/train-{}.tfrecord".format(i) for i in range(5)]
-filenames = map(str.strip, open(sys.argv[1]).readlines())
+#filenames = map(str.strip, open(sys.argv[1]).readlines())
 
 vid_ids = []
 labels = []
