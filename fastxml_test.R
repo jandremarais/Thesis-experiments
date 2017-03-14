@@ -132,10 +132,14 @@ tree_predict <- function(X, tree) {
   pred_tree <- Clone(tree)
   pred_tree$Do(function(node) node$RemoveAttribute("id"))
   pred_tree$root$Do(function(node) node$id <- 1:nrow(X), filterFun = isRoot)
+  L <- length(tree$leaves[[1]]$P)
   
   pred_tree$Do(function(node) {
-    if(!is.null(node$w)) {
-      part_score <- t(node$w) %*% t(X[node$id,])
+    if((!is.null(node$w)) & (length(node$id) != 0)) {
+      #return(print(dim(t(node$w))))
+      #return(print(node$id))
+      #return(print(dim(t(matrix(X[node$id,], nrow = length(node$id))))))
+      part_score <- t(node$w) %*% t(matrix(X[node$id,], nrow = length(node$id)))
       node$pos$id <- node$id[part_score > 0]
       node$neg$id <- node$id[part_score <= 0]
     }
@@ -143,7 +147,7 @@ tree_predict <- function(X, tree) {
   
   leaf_nodes <- pred_tree$Do(function(node) node, filterFun = isLeaf)
   
-  Y_pred <- matrix(NA, nrow = nrow(X), ncol = ncol(Y))
+  Y_pred <- matrix(NA, nrow = nrow(X), ncol = L) #, ncol = ncol(Y)
   
   # can probably make this faster
   for(i in 1:length(leaf_nodes)) {
@@ -151,6 +155,10 @@ tree_predict <- function(X, tree) {
   }
   list(predictions = Y_pred)
 }
+
+#dim(t(matrix(X[1, ])))
+#tree_predict(X = X_test, tree = train_forest[[2]]$tree)
+#t(train_forest[[1]]$tree$w) %*% t(X_test)
 
 #tree_predict(X[temp, ], Y[temp, ], temp_tree$tree)$predictions[1:5, 1:5]
 #temp_tree$predictions[1:5, 1:5]
@@ -168,11 +176,11 @@ grow_forest <- function(ntrees, X, Y, max_leaf) {
 
 #temp_forest <- grow_forest(ntrees = 4, X[temp, ], Y[temp, ], max_leaf = 100)
 
-forest_predict <- function(forest, X, Y) {
+forest_predict <- function(forest, X) {
   require(parallel)
   nCores <- detectCores()
   tree_preds <- mclapply(forest, function(a) {
-    tree_predict(X, Y, tree = a$tree)$predictions
+    tree_predict(X, tree = a$tree)$predictions
   }, mc.cores = nCores)
   Reduce("+", tree_preds)/length(tree_preds)
 }
