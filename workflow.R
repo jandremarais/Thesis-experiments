@@ -14,6 +14,9 @@ system("gsutil ls gs://youtube8m-ml/1/video_level/validate > video_validate_file
 #video_train_files <- read.table("video_train_files.txt", stringsAsFactors = FALSE)
 #video_validate_files <- read.table("video_validate_files.txt", stringsAsFactors = FALSE)
 
+train_files <- read.table("video_train_files.txt", stringsAsFactors = FALSE)
+write.table(train_files[2:5, ], "train_to_imp.txt", row.names = FALSE, col.names = FALSE, quote = FALSE)
+
 main <- py_run_file("load_tfrecords.py")
 X <- main$X
 Y <- main$Y
@@ -24,7 +27,14 @@ Y_train <- Y[train_ind, ]
 X_test <- X[-train_ind, ]
 Y_test <- Y[-train_ind, ]
 
-train_forest <- grow_forest(ntrees = 6, X, Y, max_leaf = 500)
+train_forest <- grow_forest(ntrees = 1, X, Y, max_leaf = 10)
+
+Y_train_hat <- forest_predict(train_forest, X = X)
+
+write.table(Y_train_hat, "yhattrain.csv", sep = ",", row.names = FALSE, col.names = FALSE)
+write.table(Y, "ytrain.csv", sep = ",", row.names = FALSE, col.names = FALSE)
+
+py_run_file("gap.py")$value
 
 saveRDS(train_forest, "train_forest.rds")
 train_forest <- readRDS("train_forest.rds")
