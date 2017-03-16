@@ -178,22 +178,34 @@ tree_predict <- function(X, tree) {
 library(parallel)
 #nCores <- detectCores()
 
-grow_forest <- function(ntrees, X, Y, max_leaf) {
-  require(parallel)
-  nCores <- detectCores()
-  trees <- mclapply(1:ntrees, function(a) {
-    grow_tree(X, Y, max_leaf = max_leaf)
-  }, mc.cores = nCores)
+grow_forest <- function(ntrees, X, Y, max_leaf, par = TRUE) {
+  if(par) {
+    require(parallel)
+    nCores <- detectCores()
+    trees <- mclapply(1:ntrees, function(a) {
+      grow_tree(X, Y, max_leaf = max_leaf)
+    }, mc.cores = nCores)
+  } else {
+    trees <- lapply(1:ntrees, function(a) {
+      grow_tree(X, Y, max_leaf = max_leaf)
+    })
+  }
 }
 
 #temp_forest <- grow_forest(ntrees = 4, X[temp, ], Y[temp, ], max_leaf = 100)
 
-forest_predict <- function(forest, X) {
-  require(parallel)
-  nCores <- detectCores()
-  tree_preds <- mclapply(forest, function(a) {
-    tree_predict(X, tree = a$tree)$predictions
-  }, mc.cores = nCores)
+forest_predict <- function(forest, X, par = TRUE) {
+  if(par) {
+    require(parallel)
+    nCores <- detectCores()
+    tree_preds <- mclapply(forest, function(a) {
+      tree_predict(X, tree = a$tree)$predictions
+    }, mc.cores = nCores)
+  } else {
+    tree_preds <- lapply(forest, function(a) {
+      tree_predict(X, tree = a$tree)$predictions
+    })
+  }
   Reduce("+", tree_preds)/length(tree_preds)
 }
 
