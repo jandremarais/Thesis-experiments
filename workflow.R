@@ -17,7 +17,21 @@ write.table(train_files[2:5, ], "train_to_imp.txt", row.names = FALSE, col.names
 
 main <- py_run_file("load_tfrecords.py")
 X_train <- main$X
-Y_train <- main$Y
+#Y_train <- main$Y
+
+y <- main$y
+y <- lapply(y, unlist)
+
+list2ind <- function(y, L = 4716) {
+  Y <- matrix(0, ncol = L, nrow = length(y))
+  for(i in 1:length(y)) {
+    Y[i, y[[i]]+1] <- 1
+  }
+  Y
+}
+
+Y_train <- list2ind(y = y)
+
 
 train_forest <- grow_forest(ntrees = 1, X_train, Y_train, max_leaf = 10)
 saveRDS(train_forest, "train_forest.rds")

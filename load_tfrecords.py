@@ -29,3 +29,4 @@ X = np.hstack((mean_rgb, mean_audio))
 from sklearn import preprocessing
 lb = preprocessing.MultiLabelBinarizer()
 Y = lb.fit_transform(labels)
+y = lb.inverse_transform(Y)
