@@ -13,7 +13,7 @@ system("gsutil ls gs://youtube8m-ml/1/video_level/validate > video_validate_file
 
 # training step
 train_files <- read.table("video_train_files.txt", stringsAsFactors = FALSE)
-write.table(train_files[2:20, ], "train_to_imp.txt", row.names = FALSE, col.names = FALSE, quote = FALSE)
+write.table(train_files[2:30, ], "train_to_imp.txt", row.names = FALSE, col.names = FALSE, quote = FALSE)
 
 list2ind <- function(y, L = 4716) {
   Y <- matrix(0, ncol = L, nrow = length(y))
@@ -30,11 +30,11 @@ y <- main$y
 y <- lapply(y, unlist)
 Y_train <- list2ind(y = y)
 
-train_forest <- grow_forest(ntrees = 5, X_train, Y_train, max_leaf = 500)
-saveRDS(train_forest, "forest2-10.rds")
+train_forest <- grow_forest(ntrees = 5, X_train, Y_train, max_leaf = 100, par = FALSE)
+saveRDS(train_forest, "forest2-30_100.rds")
 train_forest <- readRDS("train_forest.rds")
 
-Y_hat_train <- forest_predict(train_forest[c(1,2,5)], X = X_train)
+Y_hat_train <- forest_predict(train_forest, X = X_train, par = FALSE)
 
 library(feather)
 write_feather(as.data.frame(Y_hat_train), 'yhat.feather')
