@@ -1,19 +1,16 @@
 library(tensorflow)
 library(reticulate)
 library(LiblineaR)
+library(feather)
 
 # create text files of list of filenames
 system("gsutil ls gs://youtube8m-ml/1/video_level/test > video_test_files.txt")
 system("gsutil ls gs://youtube8m-ml/1/video_level/train > video_train_files.txt")
 system("gsutil ls gs://youtube8m-ml/1/video_level/validate > video_validate_files.txt")
 
-#video_test_files <- read.table("video_test_files.txt", stringsAsFactors = FALSE)
-#video_train_files <- read.table("video_train_files.txt", stringsAsFactors = FALSE)
-#video_validate_files <- read.table("video_validate_files.txt", stringsAsFactors = FALSE)
-
 # training step
 train_files <- read.table("video_train_files.txt", stringsAsFactors = FALSE)
-write.table(train_files[2:30, ], "train_to_imp.txt", row.names = FALSE, col.names = FALSE, quote = FALSE)
+write.table(train_files[2:10, ], "train_to_imp.txt", row.names = FALSE, col.names = FALSE, quote = FALSE)
 
 list2ind <- function(y, L = 4716) {
   Y <- matrix(0, ncol = L, nrow = length(y))
@@ -30,20 +27,30 @@ y <- main$y
 y <- lapply(y, unlist)
 Y_train <- list2ind(y = y)
 
-train_forest <- grow_forest(ntrees = 5, X_train, Y_train, max_leaf = 100, par = FALSE)
-saveRDS(train_forest, "forest2-30_100.rds")
+train_forest <- grow_forest(ntrees = 3, X_train, Y_train, max_leaf = 50, par = FALSE)
+saveRDS(train_forest, "forest2-10_50.rds")
 train_forest <- readRDS("train_forest.rds")
 
 Y_hat_train <- forest_predict(train_forest, X = X_train, par = FALSE)
 
-library(feather)
 write_feather(as.data.frame(Y_hat_train), 'yhat.feather')
 write_feather(as.data.frame(Y_train), 'y.feather')
 
-#write.table(Y_hat_train, "yhat.csv", sep = ",", row.names = FALSE, col.names = FALSE)
-#write.table(Y_train, "y.csv", sep = ",", row.names = FALSE, col.names = FALSE)
-
 py_run_file("gap.py")$value
+
+my_gap <- function(pred, act, k = 20) {
+  ord_mat <- t(apply(pred, 1, function(a) rank_op(a, k)))
+  
+  pred <- t(sapply(1:nrow(ord_mat), function(a) pred[a, ord_mat[a, ]]))
+  act <- t(sapply(1:nrow(ord_mat), function(a) act[a, ord_mat[a, ]]))
+  print(list(pred, act))
+  
+  ord_ind <- order(pred, decreasing = TRUE)
+  print(ord_ind)
+  sum((cumsum(act[ord_ind])/(1:length(ord_ind)))[act[ord_ind] == 1])/sum(act)
+}
+
+my_gap(Y_hat_train, Y_train)
 
 # validation step
 validate_files <- read.table("video_validate_files.txt", stringsAsFactors = FALSE)
@@ -64,7 +71,12 @@ Y_hat_validate <- forest_predict(train_forest[c(1,2,5)], X = X_validate)
 write_feather(as.data.frame(Y_hat_validate), 'yhat.feather')
 write_feather(as.data.frame(Y_validate), 'y.feather')
 
+Y_hat_validate <- read_feather('yhat.feather')
+Y_validate <- read_feather('y.feather')
+
 py_run_file("gap.py")$value
+
+my_gap(Y_hat_validate, Y_validate)
 
 # testing step
 
